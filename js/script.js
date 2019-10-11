@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         keyboard.style.top = keyboard.style.top ? '' : keyboard.style.top = '50%';
     };
 
-    const changeLang = (buttons, lang) =>{
+    const changeLang = (buttons, lang) => {
         const langRu = ['ё', 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '-', '=', '⬅',
             'й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ',
             'ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э',
@@ -35,22 +35,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const typing = event => {
         const target = event.target;
-        if  (target.tagName.toLocaleLowerCase() === 'button') {
+        if (target.tagName.toLocaleLowerCase() === 'button') {
             const buttons = [...keyboard.querySelectorAll('button')]
                 .filter(elem => elem.style.visibility !== 'hidden');
             const contentButton = target.textContent.trim();
-            if (contentButton === '⬅' ) {
-                searchInput.value = searchInput.value.slice(0, searchInput.value.length-1);
+            if (contentButton === '⬅') {
+                searchInput.value = searchInput.value.slice(0, searchInput.value.length - 1);
             } else if (!contentButton) {
                 searchInput.value += ' ';
             } else if (contentButton === 'en' || contentButton === 'ru') {
                 changeLang(buttons, contentButton);
-            }
-            else {
+            } else {
                 searchInput.value += contentButton;
             }
         }
-
     };
 
     keyboardButton.addEventListener('click', toggleKeyboard);
@@ -74,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target) {
             const parentTarget = target.parentElement;
             sidebarMenu.querySelectorAll('li').forEach(elem => {
-                if(elem === parentTarget) {
+                if (elem === parentTarget) {
                     elem.classList.add('active');
                 } else {
                     elem.classList.remove('active');
@@ -89,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const youTubeModal = document.querySelector('.youTuberModal');
         const modalContainer = document.getElementById('youtuberContainer');
 
-        const qw =[3840, 2560, 1920, 1280, 854, 640, 426, 256];
-        const qh =[2160, 1440, 1080, 720, 480, 360, 240, 144];
+        const qw = [3840, 2560, 1920, 1280, 854, 640, 426, 256];
+        const qh = [2160, 1440, 1080, 720, 480, 360, 240, 144];
 
         const sizeVideo = () => {
             let ww = document.documentElement.clientWidth;
@@ -113,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         videoItems.forEach(elem => {
-            elem.addEventListener('click', () =>{
+            elem.addEventListener('click', () => {
                 const idVideo = elem.dataset.youtuber;
                 youTubeModal.style.display = 'block';
 
@@ -156,19 +154,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const authBlock = document.querySelector('.auth');
 
             const authenticate = () => gapi.auth2.getAuthInstance()
-                    .signIn({scope: "https://www.googleapis.com/auth/youtube.readonly"})
-                    .then(() => console.log("Sign-in successful"))
-                    .catch(errorAuth);
+                .signIn({scope: "https://www.googleapis.com/auth/youtube.readonly"})
+                .then(() => console.log("Sign-in successful"))
+                .catch(errorAuth);
 
             const loadClient = () => {
                 gapi.client.setApiKey(API_KEY);
                 return gapi.client.load("https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest")
-                    .then(() =>  console.log("GAPI client loaded for API"))
-                    .then(() => {authBlock.style.display = 'none'})
+                    .then(() => console.log("GAPI client loaded for API"))
+                    .then(() => {
+                        authBlock.style.display = 'none'
+                    })
                     .catch(errorAuth)
             };
 
-            gapi.load("client:auth2", function() {
+            gapi.load("client:auth2", function () {
                 gapi.auth2.init({client_id: CLIENT_ID});
             });
 
@@ -187,13 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const gloTube = document.querySelector('.logo-academy');
             const trends = document.getElementById('yt_trend');
             const like = document.getElementById('like');
-
+            const subscriptions = document.getElementById('subscriptions');
+            const searchForm = document.querySelector('.search-form');
 
             const request = options => gapi.client.youtube[options.method]
                 .list(options)
                 .then(response => response.result.items)
-                .then(render)
-                .then(modalAppear)
+                .then(data => options.method === 'subscriptions' ? subRender(data) : render(data))
                 .catch(err => console.error('Во время запроса произошла ошибка: ' + err));
 
             const render = data => {
@@ -201,22 +201,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ytWrapper = document.getElementById('yt-wrapper');
                 ytWrapper.textContent = '';
                 data.forEach(item => {
-                    const {
+                    try {const {
                         id,
-                        id:{
+                        id: {
                             videoId
                         },
-                        snippet:{
+                        snippet: {
                             channelTitle,
                             title,
-                            resourceId:{
+                            resourceId: {
                                 videoId: likedVideoId
                             } = {},
-                        thumbnails:{
-                            high:{
-                                url
+                            thumbnails: {
+                                high: {
+                                    url
+                                }
                             }
-                          }
                         }
                     } = item;
                     ytWrapper.innerHTML += `
@@ -227,9 +227,60 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="yt-title">${title}</div>
                             <div class="yt-channel">${channelTitle}</div>
                         </div>
-                    `
+                    `;
+                    } catch (err) {
+                        console.error(err);
+                    }
                 });
+                modalAppear();
             };
+
+            const subRender = data => {
+                console.log(data);
+                const ytWrapper = document.getElementById('yt-wrapper');
+                ytWrapper.textContent = '';
+                data.forEach(item => {
+                   try {const {
+                        snippet: {
+                            resourceId: {
+                                channelId
+                            },
+                            description,
+                            title,
+                            thumbnails: {
+                                high: {
+                                    url
+                                }
+                            }
+                        }
+                    } = item;
+                    ytWrapper.innerHTML += `
+                        <div class="yt" data-youtuber=${channelId}>
+                            <div class="yt-thumbnail" style="--aspect-ratio:16/9;">
+                                <img src=${url} alt="thumbnail" class="yt-thumbnail__img">
+                            </div>
+                            <div class="yt-title">${title}</div>
+                            <div class="yt-channel">${description}</div>
+                        </div>
+                    `;
+                    } catch (err) {
+                       console.error(err);
+                   }
+                });
+
+                ytWrapper.querySelectorAll('.yt').forEach(item => {
+                    item.addEventListener('click', () => {
+                        request({
+                            method: 'search',
+                            part: 'snippet',
+                            channelId: item.dataset.youtuber,
+                            order: 'date',
+                            maxResults: 6,
+                        });
+                    })
+                })
+            };
+
             gloTube.addEventListener('click', () => {
                 request({
                     method: 'search',
@@ -257,8 +308,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     playlistId: 'LLhsHgN-KcHikNHGcwi2frlQ',
                     maxResults: 6,
                 })
+            });
+
+            subscriptions.addEventListener('click', () => {
+                request({
+                    method: 'subscriptions',
+                    part: 'snippet',
+                    mine: true,
+                    maxResults: 6,
+                })
+            });
+
+            searchForm.addEventListener('submit', (event) => {
+                console.log('submit');
+                event.preventDefault();
+                const valueInput = searchForm.elements[0].value;
+
+                if (!valueInput) {
+                    searchForm.style.border = '1px solid red';
+                    return;
+                }
+                request({
+                    method: 'search',
+                    part: 'snippet',
+                    order: 'relevance',
+                    maxResults: 6,
+                    q: valueInput,
+                });
+                searchForm.elements[0].value = '';
             })
         }
-
     }
 });
